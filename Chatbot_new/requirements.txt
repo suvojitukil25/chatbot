@@ -1,0 +1,4 @@
+uvicorn
+requests
+sentence-transformers
+fastapi
