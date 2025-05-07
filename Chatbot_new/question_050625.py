@@ -66,6 +66,7 @@ def questionAnswer(question,data):
             if owner.lower() == data['value'][i]['owner']['uniqueName'].lower():  # data['value'][i]['owner']['uniqueName'] returns owner name
                 count += 1
         response = (f"{count} contracts you have created")
+        format = "normal"
     elif question == "how many contracts are for process unity integration?":
         count = 0
         for i in range(len(data['value'])):
@@ -73,24 +74,28 @@ def questionAnswer(question,data):
                 if "_ProcessUnityIntegrationRequired" in data['value'][i]['customFields'][j]['fieldId'] and data['value'][i]['customFields'][j]['booleanValue'] == True:
                     count +=1
         response = (f"{count} contracts are for process unity integration")
+        format = "normal"
     elif question == "how many are expired?":
         count = 0
         for i in range(len(data['value'])):
             if data['value'][i]['contractStatus'] == "Expired":
                 count += 1
         response = (f"{count} are expired")
+        format = "normal"
     elif question == "how many are draft?":
         count = 0
         for i in range(len(data['value'])):
             if data['value'][i]['contractStatus'] == "Draft":
                 count += 1
         response = (f"{count} are draft")
+        format = "normal"
     elif question == "how many are completed?":
         count = 0
         for i in range(len(data['value'])):
             if data['value'][i]['contractStatus'] == "Completed":
                 count += 1
         response = (f"{count} are completed")
+        format = "normal"
     elif question == "how many contracts are created in US region":
         count = 0
         for i in range(len(data['value'])):
@@ -98,6 +103,7 @@ def questionAnswer(question,data):
                 if data['value'][i]['regions'][j]['uniqueName'] == "USA":
                     count += 1
         response = (f"{count} contracts are created in US region")
+        format = "normal"
     elif question == "how many gonna expired within a month?":
         count = 0
         for i in range(len(data['value'])):
@@ -107,23 +113,22 @@ def questionAnswer(question,data):
             if (expiration_date < current_date and expiration_date.year == current_date.year and expiration_date.month == current_date.month):
                 count += 1
         response = (f"{count} will be expired within a month")
+        format = "normal"
     elif question == "can you list down all the contracts , title, internal ID":
-        contract_id_list = []
-        title_list = []
-        internal_id_list = []
+        data_list = []
         for i in range(len(data['value'])):
             for j in range(len(data['value'][i]['customFields'])):
                 if "_ProcessUnityIntegrationRequired" in data['value'][i]['customFields'][j]['fieldId'] and data['value'][i]['customFields'][j]['booleanValue'] == True:
                     contract_id = data['value'][i]['contractId']
                     title = data['value'][i]['title']
                     internal_id = data['value'][i]['internalId']
-                    contract_id_list.append(contract_id)
-                    title_list.append(title)
-                    internal_id_list.append(internal_id)
-        response = {"<b>contract_id":contract_id_list,"<b>title":title_list,"<b>internal_id":internal_id_list}             
+                    data_dict = {"contract_id":contract_id,"title":title,"internal_id":internal_id}
+                    data_list.append(data_dict)
+        response = data_list
+        format = "table"             
     else:
         response = ("No answer found")
-    return response
+    return response, format
 
 app = FastAPI()
 
@@ -135,10 +140,10 @@ async def question_answer(question: str):
     if results['matches_above_thresold'] != []:
         bearer_token = access_token_generation()
         data = json_extract(bearer_token)       
-        response = questionAnswer(results['best_match'][0], data)
-        json_response = {"user_question": question, "mapping_question": results['best_match'][0], "answer":response, "matches_above_thresold": results['matches_above_thresold']}
+        response, format = questionAnswer(results['best_match'][0], data)
+        json_response = {"user_question": question, "mapping_question": results['best_match'][0], "answer":response, "format":format, "matches_above_thresold": results['matches_above_thresold']}
     else:
-        json_response = {"user_question": question, "mapping_question": "", "answer":"Please be more specific", "matches_above_thresold": results['matches_above_thresold']}
+        json_response = {"user_question": question, "mapping_question": "", "answer":"Please be more specific", "format":format, "matches_above_thresold": results['matches_above_thresold']}
     return json_response
 
 if __name__ == "__main__":
